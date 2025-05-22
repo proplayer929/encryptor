@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Encryptor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366f1',
+            secondary: '#818cf8',
+            accent: '#10b981',
+            error: '#ef4444'
+          },
+          keyframes: {
+            slideIn: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' }
+            }
+          },
+          animation: {
+            slideIn: 'slideIn 0.4s ease-out forwards'
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300">
+  <div class="max-w-lg mx-auto p-4 animate-slideIn">
+    <div class="flex flex-wrap justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-primary w-full sm:w-auto">🔐 Encryptor</h1>
+      <div class="flex space-x-2 mt-2 sm:mt-0">
+        <button onclick="toggleTheme()" class="bg-gray-300 dark:bg-gray-700 px-3 py-1 rounded-full">🌓</button>
+        <button onclick="showPage('encrypt')" class="bg-primary text-white px-3 py-1 rounded-lg hover:bg-secondary transition">Encrypt</button>
+        <button onclick="showPage('decrypt')" class="bg-secondary text-white px-3 py-1 rounded-lg hover:bg-primary transition">Decrypt</button>
+      </div>
+    </div>
+
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hidden"></div>
+
+    <div id="encrypt" class="page">
+      <div class="space-y-4">
+        <textarea id="message" placeholder="Enter message" class="w-full p-3 rounded-lg border dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+        <input type="password" id="password" placeholder="Password" class="w-full p-3 rounded-lg border dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary" />
+        <button onclick="encryptMessage()" class="w-full bg-accent hover:bg-emerald-600 text-white py-2 rounded-lg font-bold transition">Encrypt</button>
+        <textarea id="encryptedOutput" readonly class="w-full p-3 mt-3 rounded-lg border dark:bg-gray-800"></textarea>
+        <div class="flex flex-col sm:flex-row gap-2 mt-2">
+          <button onclick="copyText('encryptedOutput')" class="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition">Copy</button>
+        </div>
+        <div id="qrCode" class="flex justify-center mt-4"></div>
+      </div>
+    </div>
+
+    <div id="decrypt" class="page hidden">
+      <div class="space-y-4">
+        <textarea id="encryptedInput" placeholder="Paste encrypted message" class="w-full p-3 rounded-lg border dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+        <input type="password" id="decryptPassword" placeholder="Password" class="w-full p-3 rounded-lg border dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary" />
+        <button onclick="decryptMessage()" class="w-full bg-accent hover:bg-emerald-600 text-white py-2 rounded-lg font-bold transition">Decrypt</button>
+        <textarea id="decryptedOutput" readonly class="w-full p-3 mt-3 rounded-lg border dark:bg-gray-800"></textarea>
+        <button onclick="copyText('decryptedOutput')" class="w-full bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function showToast(message, error = false) {
+      const toast = document.getElementById("toast");
+      toast.classList.remove("hidden");
+      toast.classList.add("animate-slideIn");
+      toast.textContent = message;
+      toast.classList.toggle("bg-green-600", !error);
+      toast.classList.toggle("bg-red-600", error);
+      setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 2000);
+    }
+
+    async function getKey(password, salt) {
+      const enc = new TextEncoder();
+      const keyMaterial = await window.crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+      return crypto.subtle.deriveKey({
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256"
+      }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    }
+
+    async function encryptMessage() {
+      try {
+        const message = document.getElementById("message").value;
+        const password = document.getElementById("password").value;
+        const enc = new TextEncoder();
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const salt = window.crypto.getRandomValues(new Uint8Array(16));
+        const key = await getKey(password, salt);
+        const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, enc.encode(message));
+        const full = new Uint8Array([...salt, ...iv, ...new Uint8Array(encrypted)]);
+        const base64 = btoa(String.fromCharCode(...full));
+        document.getElementById("encryptedOutput").value = base64;
+        generateQRCode(base64);
+        showToast("Message encrypted!");
+      } catch {
+        showToast("Encryption failed", true);
+      }
+    }
+
+    async function decryptMessage() {
+      try {
+        const encryptedBase64 = document.getElementById("encryptedInput").value;
+        const password = document.getElementById("decryptPassword").value;
+        const bytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+        const salt = bytes.slice(0, 16);
+        const iv = bytes.slice(16, 28);
+        const data = bytes.slice(28);
+        const key = await getKey(password, salt);
+        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
+        document.getElementById("decryptedOutput").value = new TextDecoder().decode(decrypted);
+        showToast("Message decrypted!");
+      } catch (e) {
+        document.getElementById("decryptedOutput").value = "";
+        showToast("Decryption failed", true);
+      }
+    }
+
+    function copyText(id) {
+      const textarea = document.getElementById(id);
+      textarea.select();
+      document.execCommand('copy');
+      showToast("Copied to clipboard");
+    }
+
+    function generateQRCode(data) {
+      document.getElementById("qrCode").innerHTML = "";
+      QRCode.toCanvas(document.createElement("canvas"), data, function(err, canvas) {
+        if (!err) document.getElementById("qrCode").appendChild(canvas);
+      });
+    }
+
+    showPage('encrypt');
+  </script>
+</body>
+</html>
