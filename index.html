@@ -13,12 +13,15 @@
       theme: {
         extend: {
           colors: {
-            primary: '#4f46e5',
-            secondary: '#7c3aed',
-            accent: '#10b981',
-            error: '#ef4444',
-            background: '#f9fafb',
-            darkBackground: '#1f2937'
+            primary: '#5865F2',
+            secondary: '#7289DA',
+            accent: '#2ECC71',
+            error: '#E74C3C',
+            background: '#F2F3F5',
+            darkBackground: '#2C2F33',
+            chatBackground: '#36393F',
+            messageBubble: '#FFFFFF',
+            darkMessageBubble: '#40444B'
           },
           keyframes: {
             slideIn: {
@@ -35,17 +38,20 @@
             fadeIn: 'fadeIn 0.3s ease-in forwards'
           },
           boxShadow: {
-            'soft': '0 4px 12px rgba(0, 0, 0, 0.1)',
-            'soft-dark': '0 4px 12px rgba(0, 0, 0, 0.3)'
+            'soft': '0 2px 8px rgba(0, 0, 0, 0.1)',
+            'soft-dark': '0 2px 8px rgba(0, 0, 0, 0.3)'
+          },
+          borderRadius: {
+            'xl': '1rem'
           }
         }
       }
     };
   </script>
 </head>
-<body class="bg-background dark:bg-darkBackground text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 font-sans">
+<body class="bg-background dark:bg-darkBackground text-gray-800 dark:text-gray-100 min-h-screen font-sans transition-colors duration-300">
   <!-- Modal for decryption warning -->
-  <div id="decryptModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50">
+  <div id="decryptModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
     <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft dark:shadow-soft-dark max-w-md w-full animate-slideIn">
       <h2 class="text-2xl font-bold text-error dark:text-red-400 mb-4 flex items-center">
         <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -60,69 +66,86 @@
     </div>
   </div>
 
-  <div class="max-w-2xl mx-auto p-6 sm:p-8 animate-slideIn">
-    <header class="flex flex-col sm:flex-row justify-between items-center mb-8">
-      <h1 class="text-3xl font-extrabold text-primary tracking-tight">🔐 Secure Encryptor & Chat</h1>
-      <div class="flex space-x-3 mt-4 sm:mt-0">
-        <button onclick="toggleTheme()" class="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition" title="Toggle Theme">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+  <div class="flex min-h-screen">
+    <!-- Sidebar Navigation -->
+    <aside class="w-16 sm:w-64 bg-gray-100 dark:bg-gray-900 p-4 flex flex-col items-center sm:items-start space-y-4">
+      <h1 class="hidden sm:block text-xl font-bold text-primary">🔐 Secure Chat</h1>
+      <div class="flex flex-col w-full space-y-2">
+        <button onclick="showPage('encrypt')" class="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition sm:justify-start justify-center">
+          <svg class="w-5 h-5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-2.76-2.24-5-5-5S2 8.24 2 11s2.24 5 5 5 5-2.24 5-5z"></path></svg>
+          <span class="hidden sm:inline">Encrypt</span>
         </button>
-        <button onclick="showPage('encrypt')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition font-medium">Encrypt</button>
-        <button onclick="showPage('decrypt')" class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition font-medium">Decrypt</button>
-        <button onclick="showPage('chat')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-emerald-600 transition font-medium">Chat</button>
+        <button onclick="showPage('decrypt')" class="flex items-center px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition sm:justify-start justify-center">
+          <svg class="w-5 h-5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-2.76 2.24-5 5-5s5 2.24 5 5-2.24 5-5 5-5-2.24-5-5z"></path></svg>
+          <span class="hidden sm:inline">Decrypt</span>
+        </button>
+        <button onclick="showPage('chat')" class="flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:bg-emerald-600 transition sm:justify-start justify-center">
+          <svg class="w-5 h-5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+          <span class="hidden sm:inline">Chat</span>
+        </button>
       </div>
-    </header>
+      <button onclick="toggleTheme()" class="mt-auto p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition" title="Toggle Theme">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+      </button>
+    </aside>
 
-    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-3 bg-green-600 text-white rounded-lg shadow-soft hidden animate-fadeIn"></div>
+    <!-- Main Content -->
+    <main class="flex-1 p-4 sm:p-8">
+      <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-3 bg-green-600 text-white rounded-lg shadow-soft hidden animate-fadeIn z-50"></div>
 
-    <div id="encrypt" class="page bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft dark:shadow-soft-dark">
-      <div class="space-y-5">
-        <textarea id="message" placeholder="Enter your message" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition resize-none h-32"></textarea>
-        <input type="password" id="password" placeholder="Password" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
-        <button onclick="encryptMessage()" class="w-full bg-accent hover:bg-emerald-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-2.76-2.24-5-5-5S2 8.24 2 11s2.24 5 5 5 5-2.24 5-5zm0 0c0-2.76-2.24-5-5-5S2 8.24 2 11s2.24 5 5 5 5-2.24 5-5zm0 0c0-2.76-2.24-5-5-5S2 8.24 2 11s2.24 5 5 5 5-2.24 5-5z"></path></svg>
-          Encrypt Message
-        </button>
-        <textarea id="encryptedOutput" readonly class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 resize-none h-32"></textarea>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <button onclick="copyText('encryptedOutput')" class="flex-1 bg-primary text-white py-3 rounded-lg hover:bg-secondary transition font-semibold">Copy Output</button>
+      <div id="encrypt" class="page hidden bg-messageBubble dark:bg-darkMessageBubble p-6 rounded-xl shadow-soft dark:shadow-soft-dark">
+        <div class="space-y-5">
+          <textarea id="message" placeholder="Enter your message" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition resize-none h-32"></textarea>
+          <input type="password" id="password" placeholder="Password" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+          <button onclick="encryptMessage()" class="w-full bg-accent hover:bg-emerald-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-2.76-2.24-5-5-5S2 8.24 2 11s2.24 5 5 5 5-2.24 5-5z"></path></svg>
+            Encrypt Message
+          </button>
+          <textarea id="encryptedOutput" readonly class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 resize-none h-32"></textarea>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button onclick="copyText('encryptedOutput')" class="flex-1 bg-primary text-white py-3 rounded-lg hover:bg-secondary transition font-semibold">Copy Output</button>
+            <button onclick="generateQRCode(document.getElementById('encryptedOutput').value)" class="flex-1 bg-secondary text-white py-3 rounded-lg hover:bg-primary transition font-semibold">Generate QR Code</button>
+          </div>
+          <div id="qrCode" class="flex justify-center mt-6"></div>
         </div>
-        <div id="qrCode" class="flex justify-center mt-6"></div>
       </div>
-    </div>
 
-    <div id="decrypt" class="page hidden bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft dark:shadow-soft-dark">
-      <div class="space-y-5">
-        <textarea id="encryptedInput" placeholder="Paste encrypted message" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition resize-none h-32"></textarea>
-        <input type="password" id="decryptPassword" placeholder="Password" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
-        <button onclick="showDecryptModal()" class="w-full bg-accent hover:bg-emerald-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-2.76 2.24-5 5-5s5 2.24 5 5-2.24 5-5 5-5-2.24-5-5zm0 0c0-2 Cycles"></path></svg>
-          Decrypt Message
-        </button>
-        <textarea id="decryptedOutput" readonly class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 resize-none h-32"></textarea>
-        <button onclick="copyText('decryptedOutput')" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition font-semibold">Copy Output</button>
+      <div id="decrypt" class="page hidden bg-messageBubble dark:bg-darkMessageBubble p-6 rounded-xl shadow-soft dark:shadow-soft-dark">
+        <div class="space-y-5">
+          <textarea id="encryptedInput" placeholder="Paste encrypted message" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition resize-none h-32"></textarea>
+          <input type="password" id="decryptPassword" placeholder="Password" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+          <button onclick="showDecryptModal()" class="w-full bg-accent hover:bg-emerald-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-2.76 2.24-5 5-5s5 2.24 5 5-2.24 5-5 5-5-2.24-5-5z"></path></svg>
+            Decrypt Message
+          </button>
+          <textarea id="decryptedOutput" readonly class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 resize-none h-32"></textarea>
+          <button onclick="copyText('decryptedOutput')" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition font-semibold">Copy Output</button>
+        </div>
       </div>
-    </div>
 
-    <div id="chat" class="page hidden bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft dark:shadow-soft-dark">
-      <div class="space-y-5">
-        <div class="flex flex-col sm:flex-row gap-3">
-          <input id="peerId" placeholder="Your Peer ID" class="flex-1 p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" readonly />
+      <div id="chat" class="page bg-messageBubble dark:bg-chatBackground p-6 rounded-xl shadow-soft dark:shadow-soft-dark flex flex-col h-[calc(100vh-4rem)]">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Chat</h2>
+          <span id="connectionStatus" class="text-sm px-3 py-1 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200">Disconnected</span>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+          <input id="peerId" placeholder="Your Peer ID" class="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" readonly />
           <button onclick="copyText('peerId')" class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-secondary transition font-semibold">Copy ID</button>
-        </ Pdiv>
-        <input id="remotePeerId" placeholder="Enter remote Peer ID" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
-        <input type="password" id="chatPassword" placeholder="Chat Password" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
-        <button onclick="connectToPeer()" class="w-full bg-accent hover:bg-emerald-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-          Connect to Peer
-        </button>
-        <div id="chatMessages" class="w-full h-80 p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 overflow-y-auto"></div>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <input id="chatInput" placeholder="Type a message" class="flex-1 p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
-          <button onclick="sendMessage()" class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-secondary transition font-semibold">Send</button>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+          <input id="remotePeerId" placeholder="Enter remote Peer ID" class="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+          <input type="password" id="chatPassword" placeholder="Chat Password" class="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+          <button onclick="connectToPeer()" class="bg-accent text-white px-4 py-3 rounded-lg hover:bg-emerald-600 transition font-semibold">Connect</button>
+        </div>
+        <div id="chatMessages" class="flex-1 overflow-y-auto mb-4 p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700"></div>
+        <div class="flex gap-3">
+          <input id="chatInput" placeholder="Type a message..." class="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" onkeypress="if(event.key === 'Enter') sendMessage()" />
+          <button onclick="sendMessage()" class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-secondary transition font-semibold">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+          </button>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 
   <script>
@@ -192,7 +215,6 @@
         const full = new Uint8Array([...salt, ...iv, ...new Uint8Array(encrypted)]);
         const base64 = btoa(String.fromCharCode(...full));
         document.getElementById("encryptedOutput").value = base64;
-        generateQRCode(base64);
         showToast("Message encrypted successfully!");
       } catch {
         showToast("Encryption failed", true);
@@ -297,21 +319,33 @@
     function setupConnection() {
       conn.on('open', () => {
         showToast("Connected to peer");
+        document.getElementById('connectionStatus').textContent = 'Connected';
+        document.getElementById('connectionStatus').classList.remove('bg-gray-300', 'dark:bg-gray-600');
+        document.getElementById('connectionStatus').classList.add('bg-accent', 'text-white');
         document.getElementById('chatMessages').innerHTML = '';
       });
       conn.on('data', async data => {
         const decrypted = await decryptChatMessage(data, chatPassword);
         if (decrypted) {
-          appendMessage(decrypted, 'Peer', 'bg-gray-200 dark:bg-gray-700');
+          appendMessage(decrypted, 'Peer');
         }
       });
       conn.on('error', err => {
         showToast("Connection error", true);
+        document.getElementById('connectionStatus').textContent = 'Disconnected';
+        document.getElementById('connectionStatus').classList.remove('bg-accent', 'text-white');
+        document.getElementById('connectionStatus').classList.add('bg-gray-300', 'dark:bg-gray-600');
+      });
+      conn.on('close', () => {
+        showToast("Connection closed", true);
+        document.getElementById('connectionStatus').textContent = 'Disconnected';
+        document.getElementById('connectionStatus').classList.remove('bg-accent', 'text-white');
+        document.getElementById('connectionStatus').classList.add('bg-gray-300', 'dark:bg-gray-600');
       });
     }
 
     async function sendMessage() {
-      const message = document.getElementById('chatInput').value;
+      const message = document.getElementById('chatInput').value.trim();
       if (!conn || !conn.open) {
         showToast("Not connected to a peer", true);
         return;
@@ -323,16 +357,23 @@
       const encrypted = await encryptChatMessage(message, chatPassword);
       if (encrypted) {
         conn.send(encrypted);
-        appendMessage(message, 'You', 'bg-primary text-white');
+        appendMessage(message, 'You');
         document.getElementById('chatInput').value = '';
       }
     }
 
-    function appendMessage(message, sender, bgClass) {
+    function appendMessage(message, sender) {
       const messagesDiv = document.getElementById('chatMessages');
       const messageElement = document.createElement('div');
-      messageElement.className = `p-3 rounded-lg mb-3 max-w-[80%] ${bgClass} ${sender === 'You' ? 'ml-auto' : 'mr-auto'} animate-fadeIn`;
-      messageElement.innerHTML = `<span class="font-semibold">${sender}:</span> ${message}`;
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      messageElement.className = `p-3 rounded-lg mb-3 max-w-[70%] ${sender === 'You' ? 'ml-auto bg-primary text-white' : 'mr-auto bg-messageBubble dark:bg-darkMessageBubble'} animate-fadeIn`;
+      messageElement.innerHTML = `
+        <div class="flex items-baseline">
+          <span class="font-semibold mr-2">${sender}:</span>
+          <span>${message}</span>
+        </div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${timestamp}</div>
+      `;
       messagesDiv.appendChild(messageElement);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
@@ -343,7 +384,7 @@
         document.documentElement.classList.add('dark');
       }
       initializePeer();
-      showPage('encrypt');
+      showPage('chat');
     };
   </script>
 </body>
