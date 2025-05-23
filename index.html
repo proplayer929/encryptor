@@ -134,7 +134,6 @@
         </div>
         <div class="flex flex-col sm:flex-row gap-3 mb-4">
           <input id="remotePeerId" placeholder="Enter remote Peer ID" class="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
-          <input type="password" id="chatPassword" placeholder="Chat Password" class="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
           <button onclick="connectToPeer()" class="bg-accent text-white px-4 py-3 rounded-lg hover:bg-emerald-600 transition font-semibold">Connect</button>
         </div>
         <div id="chatMessages" class="flex-1 overflow-y-auto mb-4 p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700"></div>
@@ -151,7 +150,6 @@
   <script>
     let peer;
     let conn;
-    let chatPassword = '';
 
     function toggleTheme() {
       document.documentElement.classList.toggle('dark');
@@ -188,9 +186,9 @@
       decryptMessage();
     }
 
-    async function getKey(password, salt) {
+    async function getKey(peerId, salt) {
       const enc = new TextEncoder();
-      const keyMaterial = await window.crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+      const keyMaterial = await window.crypto.subtle.importKey("raw", enc.encode(peerId), "PBKDF2", false, ["deriveKey"]);
       return crypto.subtle.deriveKey({
         name: "PBKDF2",
         salt: salt,
@@ -243,12 +241,12 @@
       }
     }
 
-    async function encryptChatMessage(message, password) {
+    async function encryptChatMessage(message, peerId) {
       try {
         const enc = new TextEncoder();
         const iv = window.crypto.getRandomValues(new Uint8Array(12));
         const salt = window.crypto.getRandomValues(new Uint8Array(16));
-        const key = await getKey(password, salt);
+        const key = await getKey(peerId, salt);
         const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, enc.encode(message));
         const full = new Uint8Array([...salt, ...iv, ...new Uint8Array(encrypted)]);
         return btoa(String.fromCharCode(...full));
@@ -258,13 +256,13 @@
       }
     }
 
-    async function decryptChatMessage(encryptedBase64, password) {
+    async function decryptChatMessage(encryptedBase64, peerId) {
       try {
         const bytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
         const salt = bytes.slice(0, 16);
         const iv = bytes.slice(16, 28);
         const data = bytes.slice(28);
-        const key = await getKey(password, salt);
+        const key = await getKey(peerId, salt);
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
         return new TextDecoder().decode(decrypted);
       } catch {
@@ -307,9 +305,8 @@
 
     function connectToPeer() {
       const remoteId = document.getElementById('remotePeerId').value;
-      chatPassword = document.getElementById('chatPassword').value;
-      if (!remoteId || !chatPassword) {
-        showToast("Please enter a remote Peer ID and password", true);
+      if (!remoteId) {
+        showToast("Please enter a remote Peer ID", true);
         return;
       }
       conn = peer.connect(remoteId);
@@ -325,7 +322,8 @@
         document.getElementById('chatMessages').innerHTML = '';
       });
       conn.on('data', async data => {
-        const decrypted = await decryptChatMessage(data, chatPassword);
+        const peerId = document.getElementById('peerId').value;
+        const decrypted = await decryptChatMessage(data, peerId);
         if (decrypted) {
           appendMessage(decrypted, 'Peer');
         }
@@ -350,11 +348,12 @@
         showToast("Not connected to a peer", true);
         return;
       }
-      if (!message || !chatPassword) {
-        showToast("Please enter a message and password", true);
+      if (!message) {
+        showToast("Please enter a message", true);
         return;
       }
-      const encrypted = await encryptChatMessage(message, chatPassword);
+      const peerId = document.getElementById('peerId').value;
+      const encrypted = await encryptChatMessage(message, peerId);
       if (encrypted) {
         conn.send(encrypted);
         appendMessage(message, 'You');
@@ -364,8 +363,8 @@
 
     function appendMessage(message, sender) {
       const messagesDiv = document.getElementById('chatMessages');
-      const messageElement = document.createElement('div');
       const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const messageElement = document.createElement('div');
       messageElement.className = `p-3 rounded-lg mb-3 max-w-[70%] ${sender === 'You' ? 'ml-auto bg-primary text-white' : 'mr-auto bg-messageBubble dark:bg-darkMessageBubble'} animate-fadeIn`;
       messageElement.innerHTML = `
         <div class="flex items-baseline">
