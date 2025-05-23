@@ -186,10 +186,9 @@
       decryptMessage();
     }
 
-    async function getKey(peerId, remotePeerId, salt) {
-      const combinedId = [peerId, remotePeerId].sort().join(':');
+    async function getKey(password, salt) {
       const enc = new TextEncoder();
-      const keyMaterial = await window.crypto.subtle.importKey("raw", enc.encode(combinedId), "PBKDF2", false, ["deriveKey"]);
+      const keyMaterial = await window.crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
       return crypto.subtle.deriveKey({
         name: "PBKDF2",
         salt: salt,
@@ -209,7 +208,7 @@
         const enc = new TextEncoder();
         const iv = window.crypto.getRandomValues(new Uint8Array(12));
         const salt = window.crypto.getRandomValues(new Uint8Array(16));
-        const key = await getKey(password, '', salt);
+        const key = await getKey(password, salt);
         const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, enc.encode(message));
         const full = new Uint8Array([...salt, ...iv, ...new Uint8Array(encrypted)]);
         const base64 = btoa(String.fromCharCode(...full));
@@ -232,43 +231,13 @@
         const salt = bytes.slice(0, 16);
         const iv = bytes.slice(16, 28);
         const data = bytes.slice(28);
-        const key = await getKey(password, '', salt);
+        const key = await getKey(password, salt);
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
         document.getElementById("decryptedOutput").value = new TextDecoder().decode(decrypted);
         showToast("Message decrypted successfully!");
       } catch {
         document.getElementById("decryptedOutput").value = "";
         showToast("Decryption failed", true);
-      }
-    }
-
-    async function encryptChatMessage(message, peerId, remotePeerId) {
-      try {
-        const enc = new TextEncoder();
-        const iv = window.crypto.getRandomValues(new Uint8Array(12));
-        const salt = window.crypto.getRandomValues(new Uint8Array(16));
-        const key = await getKey(peerId, remotePeerId, salt);
-        const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, enc.encode(message));
-        const full = new Uint8Array([...salt, ...iv, ...new Uint8Array(encrypted)]);
-        return btoa(String.fromCharCode(...full));
-      } catch {
-        showToast("Message encryption failed", true);
-        return null;
-      }
-    }
-
-    async function decryptChatMessage(encryptedBase64, peerId, remotePeerId) {
-      try {
-        const bytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
-        const salt = bytes.slice(0, 16);
-        const iv = bytes.slice(16, 28);
-        const data = bytes.slice(28);
-        const key = await getKey(peerId, remotePeerId, salt);
-        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
-        return new TextDecoder().decode(decrypted);
-      } catch {
-        showToast("Message decryption failed", true);
-        return null;
       }
     }
 
@@ -322,13 +291,8 @@
         document.getElementById('connectionStatus').classList.add('bg-accent', 'text-white');
         document.getElementById('chatMessages').innerHTML = '';
       });
-      conn.on('data', async data => {
-        const peerId = document.getElementById('peerId').value;
-        const remotePeerId = document.getElementById('remotePeerId').value;
-        const decrypted = await decryptChatMessage(data, peerId, remotePeerId);
-        if (decrypted) {
-          appendMessage(decrypted, 'Peer');
-        }
+      conn.on('data', data => {
+        appendMessage(data, 'Peer');
       });
       conn.on('error', err => {
         showToast("Connection error", true);
@@ -344,7 +308,7 @@
       });
     }
 
-    async function sendMessage() {
+    function sendMessage() {
       const message = document.getElementById('chatInput').value.trim();
       if (!conn || !conn.open) {
         showToast("Not connected to a peer", true);
@@ -354,14 +318,9 @@
         showToast("Please enter a message", true);
         return;
       }
-      const peerId = document.getElementById('peerId').value;
-      const remotePeerId = document.getElementById('remotePeerId').value;
-      const encrypted = await encryptChatMessage(message, peerId, remotePeerId);
-      if (encrypted) {
-        conn.send(encrypted);
-        appendMessage(message, 'You');
-        document.getElementById('chatInput').value = '';
-      }
+      conn.send(message);
+      appendMessage(message, 'You');
+      document.getElementById('chatInput').value = '';
     }
 
     function appendMessage(message, sender) {
