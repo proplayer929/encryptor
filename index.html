@@ -3,104 +3,153 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Secure Encryptor</title>
+  <title>Secure Encryptor & Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            primary: '#6366f1',
-            secondary: '#818cf8',
+            primary: '#4f46e5',
+            secondary: '#7c3aed',
             accent: '#10b981',
-            error: '#ef4444'
+            error: '#ef4444',
+            background: '#f9fafb',
+            darkBackground: '#1f2937'
           },
           keyframes: {
             slideIn: {
               '0%': { transform: 'translateY(20px)', opacity: '0' },
               '100%': { transform: 'translateY(0)', opacity: '1' }
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' }
             }
           },
           animation: {
-            slideIn: 'slideIn 0.4s ease-out forwards'
+            slideIn: 'slideIn 0.5s ease-out forwards',
+            fadeIn: 'fadeIn 0.3s ease-in forwards'
+          },
+          boxShadow: {
+            'soft': '0 4px 12px rgba(0, 0, 0, 0.1)',
+            'soft-dark': '0 4px 12px rgba(0, 0, 0, 0.3)'
           }
         }
       }
     };
   </script>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300">
+<body class="bg-background dark:bg-darkBackground text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 font-sans">
   <!-- Modal for decryption warning -->
-  <div id="decryptModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full animate-slideIn">
-      <h2 class="text-xl font-bold text-red-600 dark:text-red-400 mb-4">⚠️ Security Warning</h2>
-      <p class="mb-4">MAKE SURE NOBODY CAN SEE YOUR SCREEN!</p>
-      <p class="mb-6 text-gray-600 dark:text-gray-300">Decryption will reveal sensitive information. Ensure you are in a secure environment.</p>
-      <div class="flex justify-end gap-2">
-        <button onclick="closeModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition">Cancel</button>
+  <div id="decryptModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft dark:shadow-soft-dark max-w-md w-full animate-slideIn">
+      <h2 class="text-2xl font-bold text-error dark:text-red-400 mb-4 flex items-center">
+        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Security Warning
+      </h2>
+      <p class="mb-4 text-gray-600 dark:text-gray-300">Ensure no one can see your screen!</p>
+      <p class="mb-6 text-gray-500 dark:text-gray-400">Decryption will reveal sensitive information. Confirm you are in a secure environment.</p>
+      <div class="flex justify-end gap-3">
+        <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">Cancel</button>
         <button onclick="confirmDecrypt()" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-emerald-600 transition">Proceed</button>
       </div>
     </div>
   </div>
 
-  <div class="max-w-lg mx-auto p-4 animate-slideIn">
-    <div class="flex flex-wrap justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-primary w-full sm:w-auto">🔐 Encryptor</h1>
-      <div class="flex space-x-2 mt-2 sm:mt-0">
-        <button onclick="toggleTheme()" class="bg-gray-300 dark:bg-gray-700 px-3 py-1 rounded-full">🌓</button>
-        <button onclick="showPage('encrypt')" class="bg-primary text-white px-3 py-1 rounded-lg hover:bg-secondary transition">Encrypt</button>
-        <button onclick="showPage('decrypt')" class="bg-secondary text-white px-3 py-1 rounded-lg hover:bg-primary transition">Decrypt</button>
+  <div class="max-w-2xl mx-auto p-6 sm:p-8 animate-slideIn">
+    <header class="flex flex-col sm:flex-row justify-between items-center mb-8">
+      <h1 class="text-3xl font-extrabold text-primary tracking-tight">🔐 Secure Encryptor & Chat</h1>
+      <div class="flex space-x-3 mt-4 sm:mt-0">
+        <button onclick="toggleTheme()" class="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition" title="Toggle Theme">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        </button>
+        <button onclick="showPage('encrypt')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition font-medium">Encrypt</button>
+        <button onclick="showPage('decrypt')" class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-primary transition font-medium">Decrypt</button>
+        <button onclick="showPage('chat')" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-emerald-600 transition font-medium">Chat</button>
       </div>
-    </div>
+    </header>
 
-    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hidden"></div>
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-3 bg-green-600 text-white rounded-lg shadow-soft hidden animate-fadeIn"></div>
 
-    <div id="encrypt" class="page">
-      <div class="space-y-4">
-        <textarea id="message" placeholder="Enter message" class="w-full p-3 rounded-lg border dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
-        <input type="password" id="password" placeholder="Password" class="w-full p-3 rounded-lg px-3 py-1 rounded-lg border dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary" />
-        <button onclick="encryptMessage()" class="w-full bg-accent hover:bg-emerald-600 text-white py-2 rounded-lg font-bold transition">Encrypt</button>
-        <textarea id="encryptedOutput" readonly class="w-full p-3 mt-3 rounded-lg border dark:bg-gray-800"></textarea>
-        <div class="flex flex-col sm:flex-row gap-2 mt-2">
-          <button onclick="copyText('encryptedOutput')" class="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition">Copy</button>
+    <div id="encrypt" class="page bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft dark:shadow-soft-dark">
+      <div class="space-y-5">
+        <textarea id="message" placeholder="Enter your message" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition resize-none h-32"></textarea>
+        <input type="password" id="password" placeholder="Password" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+        <button onclick="encryptMessage()" class="w-full bg-accent hover:bg-emerald-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-2.76-2.24-5-5-5S2 8.24 2 11s2.24 5 5 5 5-2.24 5-5zm0 0c0-2.76-2.24-5-5-5S2 8.24 2 11s2.24 5 5 5 5-2.24 5-5zm0 0c0-2.76-2.24-5-5-5S2 8.24 2 11s2.24 5 5 5 5-2.24 5-5z"></path></svg>
+          Encrypt Message
+        </button>
+        <textarea id="encryptedOutput" readonly class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 resize-none h-32"></textarea>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button onclick="copyText('encryptedOutput')" class="flex-1 bg-primary text-white py-3 rounded-lg hover:bg-secondary transition font-semibold">Copy Output</button>
         </div>
-        <div id="qrCode" class="flex justify-center mt-4"></div>
+        <div id="qrCode" class="flex justify-center mt-6"></div>
       </div>
     </div>
 
-    <div id="decrypt" class="page hidden">
-      <div class="space-y-4">
-        <textarea id="encryptedInput" placeholder="Paste encrypted message" class="w-full p-3 rounded-lg border dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
-        <input type="password" id="decryptPassword" placeholder="Password" class="w-full p-3 rounded-lg border dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary" />
-        <button onclick="showDecryptModal()" class="w-full bg-accent hover:bg-emerald-600 text-white py-2 rounded-lg font-bold transition">Decrypt</button>
-        <textarea id="decryptedOutput" readonly class="w-full p-3 mt-3 rounded-lg border dark:bg-gray-800"></textarea>
-        <button onclick="copyText('decryptedOutput')" class="w-full bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition">Copy</button>
+    <div id="decrypt" class="page hidden bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft dark:shadow-soft-dark">
+      <div class="space-y-5">
+        <textarea id="encryptedInput" placeholder="Paste encrypted message" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition resize-none h-32"></textarea>
+        <input type="password" id="decryptPassword" placeholder="Password" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+        <button onclick="showDecryptModal()" class="w-full bg-accent hover:bg-emerald-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-2.76 2.24-5 5-5s5 2.24 5 5-2.24 5-5 5-5-2.24-5-5zm0 0c0-2 Cycles"></path></svg>
+          Decrypt Message
+        </button>
+        <textarea id="decryptedOutput" readonly class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 resize-none h-32"></textarea>
+        <button onclick="copyText('decryptedOutput')" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-secondary transition font-semibold">Copy Output</button>
+      </div>
+    </div>
+
+    <div id="chat" class="page hidden bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft dark:shadow-soft-dark">
+      <div class="space-y-5">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input id="peerId" placeholder="Your Peer ID" class="flex-1 p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" readonly />
+          <button onclick="copyText('peerId')" class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-secondary transition font-semibold">Copy ID</button>
+        </ Pdiv>
+        <input id="remotePeerId" placeholder="Enter remote Peer ID" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+        <input type="password" id="chatPassword" placeholder="Chat Password" class="w-full p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+        <button onclick="connectToPeer()" class="w-full bg-accent hover:bg-emerald-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          Connect to Peer
+        </button>
+        <div id="chatMessages" class="w-full h-80 p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 overflow-y-auto"></div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input id="chatInput" placeholder="Type a message" class="flex-1 p-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition" />
+          <button onclick="sendMessage()" class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-secondary transition font-semibold">Send</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
+    let peer;
+    let conn;
+    let chatPassword = '';
+
     function toggleTheme() {
       document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     }
 
     function showPage(id) {
       document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
+      document.getElementById(id).classList.add('animate-fadeIn');
     }
 
     function showToast(message, error = false) {
       const toast = document.getElementById("toast");
       toast.classList.remove("hidden");
-      toast.classList.add("animate-slideIn");
       toast.textContent = message;
       toast.classList.toggle("bg-green-600", !error);
       toast.classList.toggle("bg-red-600", error);
       setTimeout(() => {
         toast.classList.add("hidden");
-      }, 2000);
+      }, 3000);
     }
 
     function showDecryptModal() {
@@ -131,6 +180,10 @@
       try {
         const message = document.getElementById("message").value;
         const password = document.getElementById("password").value;
+        if (!message || !password) {
+          showToast("Please enter a message and password", true);
+          return;
+        }
         const enc = new TextEncoder();
         const iv = window.crypto.getRandomValues(new Uint8Array(12));
         const salt = window.crypto.getRandomValues(new Uint8Array(16));
@@ -140,7 +193,7 @@
         const base64 = btoa(String.fromCharCode(...full));
         document.getElementById("encryptedOutput").value = base64;
         generateQRCode(base64);
-        showToast("Message encrypted!");
+        showToast("Message encrypted successfully!");
       } catch {
         showToast("Encryption failed", true);
       }
@@ -150,6 +203,10 @@
       try {
         const encryptedBase64 = document.getElementById("encryptedInput").value;
         const password = document.getElementById("decryptPassword").value;
+        if (!encryptedBase64 || !password) {
+          showToast("Please enter an encrypted message and password", true);
+          return;
+        }
         const bytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
         const salt = bytes.slice(0, 16);
         const iv = bytes.slice(16, 28);
@@ -157,28 +214,137 @@
         const key = await getKey(password, salt);
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
         document.getElementById("decryptedOutput").value = new TextDecoder().decode(decrypted);
-        showToast("Message decrypted!");
-      } catch (e) {
+        showToast("Message decrypted successfully!");
+      } catch {
         document.getElementById("decryptedOutput").value = "";
         showToast("Decryption failed", true);
       }
     }
 
+    async function encryptChatMessage(message, password) {
+      try {
+        const enc = new TextEncoder();
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const salt = window.crypto.getRandomValues(new Uint8Array(16));
+        const key = await getKey(password, salt);
+        const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, enc.encode(message));
+        const full = new Uint8Array([...salt, ...iv, ...new Uint8Array(encrypted)]);
+        return btoa(String.fromCharCode(...full));
+      } catch {
+        showToast("Message encryption failed", true);
+        return null;
+      }
+    }
+
+    async function decryptChatMessage(encryptedBase64, password) {
+      try {
+        const bytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+        const salt = bytes.slice(0, 16);
+        const iv = bytes.slice(16, 28);
+        const data = bytes.slice(28);
+        const key = await getKey(password, salt);
+        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
+        return new TextDecoder().decode(decrypted);
+      } catch {
+        showToast("Message decryption failed", true);
+        return null;
+      }
+    }
+
     function copyText(id) {
-      const textarea = document.getElementById(id);
-      textarea.select();
+      const input = document.getElementById(id);
+      input.select();
       document.execCommand('copy');
       showToast("Copied to clipboard");
     }
 
     function generateQRCode(data) {
       document.getElementById("qrCode").innerHTML = "";
-      QRCode.toCanvas(document.createElement("canvas"), data, function(err, canvas) {
-        if (!err) document.getElementById("qrCode").appendChild(canvas);
+      QRCode.toCanvas(document.createElement("canvas"), data, { width: 200 }, function(err, canvas) {
+        if (!err) {
+          canvas.classList.add('rounded-lg', 'border', 'border-gray-300', 'dark:border-gray-600');
+          document.getElementById("qrCode").appendChild(canvas);
+        }
       });
     }
 
-    showPage('encrypt');
+    function initializePeer() {
+      peer = new Peer();
+      peer.on('open', id => {
+        document.getElementById('peerId').value = id;
+        showToast("Peer ID generated");
+      });
+      peer.on('connection', connection => {
+        conn = connection;
+        setupConnection();
+      });
+      peer.on('error', err => {
+        showToast(`PeerJS error: ${err.type}`, true);
+      });
+    }
+
+    function connectToPeer() {
+      const remoteId = document.getElementById('remotePeerId').value;
+      chatPassword = document.getElementById('chatPassword').value;
+      if (!remoteId || !chatPassword) {
+        showToast("Please enter a remote Peer ID and password", true);
+        return;
+      }
+      conn = peer.connect(remoteId);
+      setupConnection();
+    }
+
+    function setupConnection() {
+      conn.on('open', () => {
+        showToast("Connected to peer");
+        document.getElementById('chatMessages').innerHTML = '';
+      });
+      conn.on('data', async data => {
+        const decrypted = await decryptChatMessage(data, chatPassword);
+        if (decrypted) {
+          appendMessage(decrypted, 'Peer', 'bg-gray-200 dark:bg-gray-700');
+        }
+      });
+      conn.on('error', err => {
+        showToast("Connection error", true);
+      });
+    }
+
+    async function sendMessage() {
+      const message = document.getElementById('chatInput').value;
+      if (!conn || !conn.open) {
+        showToast("Not connected to a peer", true);
+        return;
+      }
+      if (!message || !chatPassword) {
+        showToast("Please enter a message and password", true);
+        return;
+      }
+      const encrypted = await encryptChatMessage(message, chatPassword);
+      if (encrypted) {
+        conn.send(encrypted);
+        appendMessage(message, 'You', 'bg-primary text-white');
+        document.getElementById('chatInput').value = '';
+      }
+    }
+
+    function appendMessage(message, sender, bgClass) {
+      const messagesDiv = document.getElementById('chatMessages');
+      const messageElement = document.createElement('div');
+      messageElement.className = `p-3 rounded-lg mb-3 max-w-[80%] ${bgClass} ${sender === 'You' ? 'ml-auto' : 'mr-auto'} animate-fadeIn`;
+      messageElement.innerHTML = `<span class="font-semibold">${sender}:</span> ${message}`;
+      messagesDiv.appendChild(messageElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // Initialize PeerJS and theme persistence
+    window.onload = () => {
+      if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+      initializePeer();
+      showPage('encrypt');
+    };
   </script>
 </body>
 </html>
